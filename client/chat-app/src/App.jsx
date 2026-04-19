@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 
-const SOCKET_SERVER_URL = 'http://localhost:5000';
+const SOCKET_SERVER_URL = 'http://localhost:5000' || 'https://socket-connectivity-production.up.railway.app/';
 const socket = io(SOCKET_SERVER_URL, { withCredentials: true });
 
 function App() {
