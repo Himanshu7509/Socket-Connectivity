@@ -2,8 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Server } from 'socket.io';
+import connectDB from './config/db.js';
+import Message from './models/Message.js';
 
 dotenv.config();
+connectDB();
 const app = express();
 
 const allowedOrigins = ['http://localhost:5000', 'http://localhost:5173', 'https://socket-connectivity.vercel.app'];
@@ -47,14 +50,36 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  // Handle join room
-  socket.on('join_room', (room) => {
+  // Handle join room and send chat history
+  socket.on('join_room', async (room) => {
     socket.join(room);
     console.log(`User ${socket.id} joined room: ${room}`);
+
+    // Fetch and send previous messages for this room
+    try {
+      const previousMessages = await Message.find({ room }).sort({ timestamp: 1 }).limit(100);
+      socket.emit('load_messages', previousMessages);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
   });
 
   // Handle chat messages
-  socket.on('send_message', (data) => {
+  socket.on('send_message', async (data) => {
+    // Save message to database
+    try {
+      const newMessage = new Message({
+        room: data.room,
+        username: data.username,
+        message: data.message,
+        time: data.time
+      });
+      await newMessage.save();
+    } catch (error) {
+      console.error('Error saving message:', error);
+    }
+
+    // Broadcast to others in the room
     socket.to(data.room).emit('receive_message', data);
   });
 
@@ -77,4 +102,14 @@ export { io };
 
 app.get('/', (req, res) => {
   res.send('api is running');
+});
+
+// API endpoint to get messages for a room
+app.get('/api/messages/:room', async (req, res) => {
+  try {
+    const messages = await Message.find({ room: req.params.room }).sort({ timestamp: 1 }).limit(100);
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching messages' });
+  }
 });
