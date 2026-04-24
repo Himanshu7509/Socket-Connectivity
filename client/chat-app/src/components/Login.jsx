@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 
@@ -8,6 +8,15 @@ function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [room, setRoom] = useState('');
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const savedUser = localStorage.getItem('chatUser');
+    if (savedUser) {
+      const userData = JSON.parse(savedUser);
+      navigate(`/chat/${userData.room}`);
+    }
+  }, [navigate]);
 
   const joinRoom = () => {
     if (room !== '' && username.trim() !== '') {

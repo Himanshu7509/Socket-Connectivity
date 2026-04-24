@@ -57,7 +57,7 @@ const groupMessagesByDate = (msgs) => {
   return grouped;
 };
 
-function ChatPage({ username, socket, messages, setMessages }) {
+function ChatPage({ username, socket, messages, setMessages, onLogout }) {
   const { room } = useParams();
   const navigate = useNavigate();
   const [message, setMessage] = useState('');
@@ -115,8 +115,7 @@ function ChatPage({ username, socket, messages, setMessages }) {
 
   // Handle logout
   const handleLogout = () => {
-    socket.disconnect();
-    setMessages([]);
+    onLogout();
     navigate('/');
   };
 
